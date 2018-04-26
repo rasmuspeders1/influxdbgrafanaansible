@@ -1,6 +1,7 @@
 # influxdbgrafanaansible
 
-Only tested with ansible 2.2 and 2.4
+Playbook and systemd unit file templates for installing influxdb, grafana and chronograf on a raspberry pi using docker.
+The services will run in docker containers and systemd .service files are installed so the services can be controlled by systemd. 
 
 # How to use directly on raspberry pi# 
 Make sure you have ansible installed on you raspberry pi
