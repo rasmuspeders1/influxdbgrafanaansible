@@ -1,0 +1,19 @@
+[Unit]
+Description=Grafana docker container
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+RestartSec=30
+
+ExecStart=/usr/bin/docker run --rm \
+                              --name=grafana \
+                              -v /var/local/grafana:/var/lib/grafana \
+                              -p 3000:3000 \
+                              --network {{docker_net_name}} \
+                              fg2it/grafana-armhf:{{grafana_version}}
+ExecStop=/usr/bin/docker stop grafana
+
+[Install]
+WantedBy=multi-user.target

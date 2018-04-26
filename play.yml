@@ -1,0 +1,117 @@
+- hosts: all
+  vars: 
+    grafana_version: v5.0.4
+    docker_net_name: docker-custom-net
+  tasks:
+  - name: Check if docker-ce repo is present
+    shell: apt-cache show docker-ce
+    ignore_errors: true
+    register: has_docker_ce
+
+  - name: get get-docker.sh
+    get_url:
+      url: http://get.docker.com
+      dest: /tmp/get-docker.sh
+      mode: 0744
+
+  - name: run get-docker.sh
+    become: true
+    shell: /tmp/get-docker.sh
+    when: has_docker_ce.rc!=0
+
+  - name: ensure docker is latest version
+    become: true
+    apt:
+      name: docker
+      state: latest
+      update_cache: true
+  
+  - name: ensure docker management dependencies are installed
+    become: true
+    apt:
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - python-docker
+
+  - name: ensure docker-grafana.service file is correct
+    become: true
+    template:
+      src: docker-grafana.service.j2
+      dest: /etc/systemd/system/grafana.service
+    notify:
+      restart grafana
+  
+  - name: ensure docker-influxdb.service file is correct
+    become: true
+    template:
+      src: docker-influxdb.service.j2
+      dest: /etc/systemd/system/influxdb.service
+    notify:
+      restart influxdb
+
+  - name: ensure docker-chronograf.service file is correct
+    become: true
+    template:
+      src: docker-chronograf.service.j2
+      dest: /etc/systemd/system/chronograf.service
+    notify:
+      restart chronograf
+
+  - name: ensure docker is running and enabled
+    become: true
+    systemd:
+      name: docker
+      daemon_reload: yes
+      enabled: yes
+      state: started
+
+  - name: ensure custom docker network bridge exists
+    become: true
+    docker_network:
+      name: "{{docker_net_name}}"
+      driver: bridge
+      state: present
+  
+  - name: ensure grafana systemd service is running and enabled
+    become: true
+    systemd:
+      name: grafana
+      enabled: yes
+      state: started
+  
+  - name: ensure influxdb systemd service is running and enabled
+    become: true
+    systemd:
+      name: influxdb
+      enabled: yes
+      state: started
+
+  - name: ensure chronograf systemd service is running and enabled
+    become: true
+    systemd:
+      name: chronograf
+      enabled: yes
+      state: started
+
+  handlers:
+    - name: restart grafana
+      become: true
+      systemd:
+        name: grafana
+        daemon_reload: true
+        state: restarted
+    
+    - name: restart influxdb
+      become: true
+      systemd:
+        name: influxdb
+        daemon_reload: true
+        state: restarted
+    
+    - name: restart chronograf
+      become: true
+      systemd:
+        name: chronograf
+        daemon_reload: true
+        state: restarted

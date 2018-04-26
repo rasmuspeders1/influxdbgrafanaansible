@@ -1,0 +1,19 @@
+[Unit]
+Description=InfluxDB docker container
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+RestartSec=30
+
+ExecStart=/usr/bin/docker run --rm \
+                              --name=influxdb \
+                              -v /var/local/influxdb:/var/lib/influxdb \
+                              -p 8086:8086 \
+                              --network {{docker_net_name}} \
+                              influxdb
+ExecStop=/usr/bin/docker stop influxdb
+
+[Install]
+WantedBy=multi-user.target
